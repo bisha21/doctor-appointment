@@ -198,3 +198,73 @@ export async function getPatientAppointments() {
         return { error: "Failed to fetch appointments" };
     }
 }
+
+export async function cancelAppointment(formData) {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const appointmentId = formData.get("appointmentId");
+    if (!appointmentId) throw new Error("Appointment id is required");
+
+    try {
+        const patient = await db.user.findUnique({
+            where: { clerkUserId: userId },
+        });
+        if (!patient) throw new Error("Patient not found");
+
+        const appointment = await db.appointment.findFirst({
+            where: { id: appointmentId, patientId: patient.id },
+        });
+
+        if (!appointment) throw new Error("Appointment not found");
+        if (appointment.status !== "SCHEDULED") {
+            throw new Error("Only scheduled appointments can be cancelled");
+        }
+
+        const hoursUntilStart =
+            (appointment.startTime.getTime() - Date.now()) / (1000 * 60 * 60);
+        const isRefundEligible = hoursUntilStart >= CANCELLATION_REFUND_WINDOW_HOURS;
+
+        await db.$transaction(async (tx) => {
+            await tx.appointment.update({
+                where: { id: appointmentId },
+                data: { status: "CANCELLED" },
+            });
+
+            // Release the matching slot back to the pool, if it still exists.
+            await tx.availability.updateMany({
+                where: {
+                    doctorId: appointment.doctorId,
+                    startTime: appointment.startTime,
+                    endTime: appointment.endTime,
+                    status: "BOOKED",
+                },
+                data: { status: "AVAILABLE" },
+            });
+
+            if (isRefundEligible) {
+                await tx.creditTransaction.create({
+                    data: {
+                        userId: patient.id,
+                        amount: APPOINTMENT_CREDIT_COST,
+                        type: "APPOINTMENT_REFUND",
+                    },
+                });
+
+                await tx.user.update({
+                    where: { id: patient.id },
+                    data: { credits: { increment: APPOINTMENT_CREDIT_COST } },
+                });
+            }
+        });
+
+        revalidatePath("/appointments");
+        revalidatePath("/doctor");
+        revalidatePath("/doctors");
+
+        return { success: true, refunded: isRefundEligible };
+    } catch (error) {
+        console.error("Failed to cancel appointment:", error);
+        throw new Error(error.message || "Failed to cancel appointment");
+    }
+}

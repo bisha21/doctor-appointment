@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getPatientAppointments } from "actions/appointments";
 import { APPOINTMENT_STATUS_STYLES } from "@/lib/constants";
 import { ReviewForm } from "./_components/review-form";
+import { AppointmentActions } from "./_components/appointment-actions";
 
 export const metadata = {
   title: "My Appointments - MediMeet",
@@ -74,6 +75,9 @@ export default async function AppointmentsPage() {
                   >
                     {appointment.status}
                   </Badge>
+                  {appointment.status === "SCHEDULED" && (
+                    <AppointmentActions appointment={appointment} />
+                  )}
                   {appointment.status === "COMPLETED" && (
                     <ReviewForm
                       appointmentId={appointment.id}

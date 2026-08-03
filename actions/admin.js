@@ -133,3 +133,87 @@ export async function updateDoctorActiveStatus(formData) {
     }
 }
 
+export async function getAllAppointmentsForAdmin() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+    try {
+        const appointments = await db.appointment.findMany({
+            include: {
+                patient: { select: { name: true, email: true } },
+                doctor: { select: { name: true, specialty: true } },
+            },
+            orderBy: { startTime: "desc" },
+            take: 200,
+        });
+        return appointments;
+    } catch (e) {
+        console.log("Failed to get all appointments");
+        throw new Error("Failed to get all appointments");
+    }
+}
+
+export async function getPlatformSummary() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+
+    try {
+        const [
+            totalPatients,
+            totalDoctors,
+            verifiedDoctors,
+            appointmentCounts,
+            creditAggregates,
+            payoutAggregates,
+            outstandingCredits,
+        ] = await Promise.all([
+            db.user.count({ where: { role: "PATIENT" } }),
+            db.user.count({ where: { role: "DOCTOR" } }),
+            db.user.count({ where: { role: "DOCTOR", verificationStatus: "VERIFIED" } }),
+            db.appointment.groupBy({
+                by: ["status"],
+                _count: { _all: true },
+            }),
+            db.creditTransaction.groupBy({
+                by: ["type"],
+                _sum: { amount: true },
+            }),
+            db.payout.groupBy({
+                by: ["status"],
+                _sum: { netAmount: true, credits: true },
+            }),
+            db.user.aggregate({
+                where: { role: "PATIENT" },
+                _sum: { credits: true },
+            }),
+        ]);
+
+        const appointmentsByStatus = Object.fromEntries(
+            appointmentCounts.map((row) => [row.status, row._count._all])
+        );
+
+        const creditsByType = Object.fromEntries(
+            creditAggregates.map((row) => [row.type, row._sum.amount || 0])
+        );
+
+        const payoutsByStatus = Object.fromEntries(
+            payoutAggregates.map((row) => [
+                row.status,
+                { netAmount: row._sum.netAmount || 0, credits: row._sum.credits || 0 },
+            ])
+        );
+
+        return {
+            totalPatients,
+            totalDoctors,
+            verifiedDoctors,
+            appointmentsByStatus,
+            creditsByType,
+            payoutsByStatus,
+            outstandingPatientCredits: outstandingCredits._sum.credits || 0,
+        };
+    } catch (error) {
+        console.error("Failed to compute platform summary:", error);
+        return { error: "Failed to compute platform summary" };
+    }
+}
+

@@ -1,36 +1,53 @@
-import { Clock, ShieldCheck, ShieldOff, Star, XCircle } from "lucide-react";
+import { Calendar, Clock, LayoutDashboard, ShieldCheck, ShieldOff, Star, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getPendingDoctors,
   getVerifiedDoctors,
   getRejectedDoctors,
   getSuspendedDoctors,
+  getAllAppointmentsForAdmin,
+  getPlatformSummary,
 } from "actions/admin";
 import { getAllReviewsForAdmin } from "actions/reviews";
 import { DoctorReviewList } from "./_components/doctor-review-list";
 import { DoctorActiveStatusList } from "./_components/verified-doctors";
 import { ReviewModerationList } from "./_components/review-moderation-list";
+import { AllAppointmentsList } from "./_components/all-appointments-list";
+import { PlatformSummary } from "./_components/platform-summary";
 
 export const metadata = {
   title: "Admin Dashboard - MediMeet",
 };
 
 export default async function AdminDashboardPage() {
-  const [pendingDoctors, verifiedDoctors, rejectedDoctors, suspendedDoctors, reviews] =
-    await Promise.all([
-      getPendingDoctors(),
-      getVerifiedDoctors(),
-      getRejectedDoctors(),
-      getSuspendedDoctors(),
-      getAllReviewsForAdmin(),
-    ]);
+  const [
+    pendingDoctors,
+    verifiedDoctors,
+    rejectedDoctors,
+    suspendedDoctors,
+    reviews,
+    appointments,
+    summary,
+  ] = await Promise.all([
+    getPendingDoctors(),
+    getVerifiedDoctors(),
+    getRejectedDoctors(),
+    getSuspendedDoctors(),
+    getAllReviewsForAdmin(),
+    getAllAppointmentsForAdmin(),
+    getPlatformSummary(),
+  ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="h-auto flex-wrap justify-start">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending ({pendingDoctors.length})
@@ -51,7 +68,15 @@ export default async function AdminDashboardPage() {
             <Star className="h-4 w-4" />
             Reviews ({reviews.length})
           </TabsTrigger>
+          <TabsTrigger value="appointments" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Appointments ({appointments.length})
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="mt-4">
+          <PlatformSummary summary={summary} />
+        </TabsContent>
 
         <TabsContent value="pending" className="mt-4">
           <DoctorReviewList
@@ -87,6 +112,10 @@ export default async function AdminDashboardPage() {
 
         <TabsContent value="reviews" className="mt-4">
           <ReviewModerationList reviews={reviews} />
+        </TabsContent>
+
+        <TabsContent value="appointments" className="mt-4">
+          <AllAppointmentsList appointments={appointments} />
         </TabsContent>
       </Tabs>
     </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Calendar as CalendarIcon, CheckCircle2, Loader2, User } from 'lucide-react';
+import { Calendar as CalendarIcon, CheckCircle2, Loader2, User, Video } from 'lucide-react';
 import useFetch from '@/app/hooks/useFetch';
 import { markAppointmentCompleted, updateAppointmentNotes } from 'actions/doctor';
 import { Card, CardContent } from '@/components/ui/card';
@@ -125,16 +125,27 @@ export function AppointmentsList({ appointments }) {
                   Notes
                 </Button>
                 {appointment.status === 'SCHEDULED' && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    disabled={completing}
-                    onClick={() => handleComplete(appointment.id)}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" />
-                    Mark Completed
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      title="Video calling isn't available yet"
+                    >
+                      <Video className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={completing}
+                      onClick={() => handleComplete(appointment.id)}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Mark Completed
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
