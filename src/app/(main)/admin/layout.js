@@ -12,5 +12,5 @@ export default async function AdminLayout({ children }) {
   if (user.role === "PATIENT") redirect("/doctors");
   if (user.role === "DOCTOR") redirect("/doctor");
 
-  return <>{children}</>;
+  return <div className="px-[100px]">{children}</div>;
 }

@@ -18,5 +18,5 @@ export default async function DoctorLayout({ children }) {
     redirect("/admin");
   }
 
-  return <>{children}</>;
+  return <div className="px-[100px]">{children}</div>;
 }
