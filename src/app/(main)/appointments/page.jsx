@@ -5,15 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPatientAppointments } from "actions/appointments";
+import { APPOINTMENT_STATUS_STYLES } from "@/lib/constants";
 
 export const metadata = {
   title: "My Appointments - MediMeet",
-};
-
-const STATUS_STYLES = {
-  SCHEDULED: "bg-emerald-900/20 text-emerald-400 border-emerald-700/30",
-  COMPLETED: "bg-blue-900/20 text-blue-400 border-blue-700/30",
-  CANCELLED: "bg-red-900/20 text-red-400 border-red-700/30",
 };
 
 export default async function AppointmentsPage() {
@@ -65,10 +60,15 @@ export default async function AppointmentsPage() {
                       &quot;{appointment.patientDescription}&quot;
                     </p>
                   )}
+                  {appointment.notes && (
+                    <p className="text-sm text-emerald-400">
+                      Doctor&apos;s notes: {appointment.notes}
+                    </p>
+                  )}
                 </div>
                 <Badge
                   variant="outline"
-                  className={STATUS_STYLES[appointment.status]}
+                  className={APPOINTMENT_STATUS_STYLES[appointment.status]}
                 >
                   {appointment.status}
                 </Badge>
