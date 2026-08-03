@@ -187,6 +187,7 @@ export async function getPatientAppointments() {
                         imageUrl: true,
                     },
                 },
+                review: true,
             },
             orderBy: { startTime: "desc" },
         });

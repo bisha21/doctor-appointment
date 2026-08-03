@@ -19,7 +19,7 @@ async function requireVerifiedDoctor() {
         throw new Error("Only doctors can perform this action");
     }
     if (doctor.verificationStatus !== "VERIFIED") {
-        throw new Error("Your account is not verified yet");
+        throw new Error("Your account is not verified or has been suspended");
     }
 
     return doctor;

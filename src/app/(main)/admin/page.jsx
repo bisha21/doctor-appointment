@@ -1,23 +1,26 @@
-import { Clock, ShieldCheck, XCircle } from "lucide-react";
+import { Clock, ShieldCheck, ShieldOff, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getPendingDoctors,
   getVerifiedDoctors,
   getRejectedDoctors,
+  getSuspendedDoctors,
 } from "actions/admin";
 import { DoctorReviewList } from "./_components/doctor-review-list";
-import { VerifiedDoctors } from "./_components/verified-doctors";
+import { DoctorActiveStatusList } from "./_components/verified-doctors";
 
 export const metadata = {
   title: "Admin Dashboard - MediMeet",
 };
 
 export default async function AdminDashboardPage() {
-  const [pendingDoctors, verifiedDoctors, rejectedDoctors] = await Promise.all([
-    getPendingDoctors(),
-    getVerifiedDoctors(),
-    getRejectedDoctors(),
-  ]);
+  const [pendingDoctors, verifiedDoctors, rejectedDoctors, suspendedDoctors] =
+    await Promise.all([
+      getPendingDoctors(),
+      getVerifiedDoctors(),
+      getRejectedDoctors(),
+      getSuspendedDoctors(),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -32,6 +35,10 @@ export default async function AdminDashboardPage() {
           <TabsTrigger value="verified" className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4" />
             Verified ({verifiedDoctors.length})
+          </TabsTrigger>
+          <TabsTrigger value="suspended" className="flex items-center gap-2">
+            <ShieldOff className="h-4 w-4" />
+            Suspended ({suspendedDoctors.length})
           </TabsTrigger>
           <TabsTrigger value="rejected" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
@@ -48,7 +55,19 @@ export default async function AdminDashboardPage() {
         </TabsContent>
 
         <TabsContent value="verified" className="mt-4">
-          <VerifiedDoctors doctors={verifiedDoctors} />
+          <DoctorActiveStatusList
+            doctors={verifiedDoctors}
+            suspend
+            emptyMessage="No verified doctors yet."
+          />
+        </TabsContent>
+
+        <TabsContent value="suspended" className="mt-4">
+          <DoctorActiveStatusList
+            doctors={suspendedDoctors}
+            suspend={false}
+            emptyMessage="No suspended doctors."
+          />
         </TabsContent>
 
         <TabsContent value="rejected" className="mt-4">

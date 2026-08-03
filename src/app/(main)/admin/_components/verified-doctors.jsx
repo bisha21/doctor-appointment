@@ -3,35 +3,35 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Loader2, ShieldOff, User } from 'lucide-react';
+import { Loader2, ShieldCheck, ShieldOff, User } from 'lucide-react';
 import useFetch from '@/app/hooks/useFetch';
 import { updateDoctorActiveStatus } from 'actions/admin';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-export function VerifiedDoctors({ doctors }) {
+export function DoctorActiveStatusList({ doctors, suspend, emptyMessage }) {
   const router = useRouter();
   const [actingId, setActingId] = useState(null);
 
-  const { fn: submitSuspend, loading, data } = useFetch(updateDoctorActiveStatus);
+  const { fn: submitStatus, loading, data } = useFetch(updateDoctorActiveStatus);
 
   useEffect(() => {
     if (data?.success) {
-      toast.success('Doctor suspended');
+      toast.success(suspend ? 'Doctor suspended' : 'Doctor reactivated');
       router.refresh();
     }
-  }, [data, router]);
+  }, [data, router, suspend]);
 
-  const handleSuspend = async (doctorId) => {
+  const handleClick = async (doctorId) => {
     setActingId(doctorId);
     const formData = new FormData();
     formData.append('doctorId', doctorId);
-    formData.append('suspend', 'true');
-    await submitSuspend(formData);
+    formData.append('suspend', suspend ? 'true' : 'false');
+    await submitStatus(formData);
   };
 
   if (!doctors || doctors.length === 0) {
-    return <p className="text-muted-foreground">No verified doctors yet.</p>;
+    return <p className="text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (
@@ -56,14 +56,19 @@ export function VerifiedDoctors({ doctors }) {
                 variant="outline"
                 size="sm"
                 disabled={loading}
-                onClick={() => handleSuspend(doctor.id)}
+                onClick={() => handleClick(doctor.id)}
               >
                 {isActing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+                ) : suspend ? (
                   <>
                     <ShieldOff className="h-4 w-4 mr-1" />
                     Suspend
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4 mr-1" />
+                    Reactivate
                   </>
                 )}
               </Button>
