@@ -1,4 +1,4 @@
-import { Clock, ShieldCheck, ShieldOff, XCircle } from "lucide-react";
+import { Clock, ShieldCheck, ShieldOff, Star, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getPendingDoctors,
@@ -6,20 +6,23 @@ import {
   getRejectedDoctors,
   getSuspendedDoctors,
 } from "actions/admin";
+import { getAllReviewsForAdmin } from "actions/reviews";
 import { DoctorReviewList } from "./_components/doctor-review-list";
 import { DoctorActiveStatusList } from "./_components/verified-doctors";
+import { ReviewModerationList } from "./_components/review-moderation-list";
 
 export const metadata = {
   title: "Admin Dashboard - MediMeet",
 };
 
 export default async function AdminDashboardPage() {
-  const [pendingDoctors, verifiedDoctors, rejectedDoctors, suspendedDoctors] =
+  const [pendingDoctors, verifiedDoctors, rejectedDoctors, suspendedDoctors, reviews] =
     await Promise.all([
       getPendingDoctors(),
       getVerifiedDoctors(),
       getRejectedDoctors(),
       getSuspendedDoctors(),
+      getAllReviewsForAdmin(),
     ]);
 
   return (
@@ -43,6 +46,10 @@ export default async function AdminDashboardPage() {
           <TabsTrigger value="rejected" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
             Rejected ({rejectedDoctors.length})
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Reviews ({reviews.length})
           </TabsTrigger>
         </TabsList>
 
@@ -76,6 +83,10 @@ export default async function AdminDashboardPage() {
             showReject={false}
             emptyMessage="No rejected applications."
           />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="mt-4">
+          <ReviewModerationList reviews={reviews} />
         </TabsContent>
       </Tabs>
     </div>

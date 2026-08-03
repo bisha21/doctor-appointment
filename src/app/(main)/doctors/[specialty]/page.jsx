@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowLeft, Stethoscope, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/star-rating";
 import { getDoctorsBySpecialty } from "actions/doctors";
 
 export async function generateMetadata({ params }) {
@@ -68,6 +69,16 @@ const SpecialtyPage = async ({ params }) => {
                     <p className="text-sm text-muted-foreground">
                       {doctor.experience} years of experience
                     </p>
+                    {doctor.reviewCount > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <StarRating value={doctor.averageRating} readOnly size="h-3.5 w-3.5" />
+                        <span className="text-xs text-muted-foreground">
+                          ({doctor.reviewCount})
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No reviews yet</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

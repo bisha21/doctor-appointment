@@ -11,9 +11,23 @@ export async function getDoctorsBySpecialty(specialty) {
                 specialty,
             },
             orderBy: { name: "asc" },
+            include: {
+                doctorReviews: { select: { rating: true } },
+            },
         });
 
-        return { doctors };
+        const doctorsWithRatings = doctors.map(({ doctorReviews, ...doctor }) => {
+            const reviewCount = doctorReviews.length;
+            const averageRating =
+                reviewCount === 0
+                    ? null
+                    : doctorReviews.reduce((sum, review) => sum + review.rating, 0) /
+                    reviewCount;
+
+            return { ...doctor, averageRating, reviewCount };
+        });
+
+        return { doctors: doctorsWithRatings };
     } catch (error) {
         console.error("Failed to fetch doctors by specialty:", error);
         return { error: "Failed to fetch doctors" };

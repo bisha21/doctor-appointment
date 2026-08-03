@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Stethoscope, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/star-rating";
 import { getDoctorById, getAvailableSlots } from "actions/appointments";
 import { getCurrentUser } from "actions/onboarding";
+import { getDoctorReviews } from "actions/reviews";
 import { APPOINTMENT_CREDIT_COST } from "@/lib/constants";
 import { BookingForm } from "./_components/booking-form";
 
@@ -25,10 +27,12 @@ export default async function DoctorProfilePage({ params }) {
     notFound();
   }
 
-  const [{ days, error: slotsError }, currentUser] = await Promise.all([
-    getAvailableSlots(doctor.id),
-    getCurrentUser(),
-  ]);
+  const [{ days, error: slotsError }, currentUser, { reviews, averageRating, reviewCount, error: reviewsError }] =
+    await Promise.all([
+      getAvailableSlots(doctor.id),
+      getCurrentUser(),
+      getDoctorReviews(doctor.id),
+    ]);
 
   let canBook = false;
   let blockedMessage = null;
@@ -74,6 +78,17 @@ export default async function DoctorProfilePage({ params }) {
               <Stethoscope className="h-4 w-4" />
               {doctor.specialty} · {doctor.experience} years experience
             </p>
+            {reviewCount > 0 ? (
+              <div className="flex items-center gap-2">
+                <StarRating value={averageRating} readOnly size="h-4 w-4" />
+                <span className="text-sm text-muted-foreground">
+                  {averageRating.toFixed(1)} ({reviewCount} review
+                  {reviewCount === 1 ? "" : "s"})
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No reviews yet</p>
+            )}
             <p className="text-muted-foreground">{doctor.description}</p>
           </div>
         </CardContent>
@@ -90,6 +105,35 @@ export default async function DoctorProfilePage({ params }) {
             canBook={canBook}
             blockedMessage={blockedMessage}
           />
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Patient Reviews</h2>
+        {reviewsError ? (
+          <p className="text-destructive">{reviewsError}</p>
+        ) : reviews.length === 0 ? (
+          <p className="text-muted-foreground">
+            No reviews yet. Be the first to leave one after your appointment.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <Card key={review.id} className="border-emerald-900/30">
+                <CardContent className="py-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{review.patient.name}</p>
+                    <StarRating value={review.rating} readOnly size="h-4 w-4" />
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-muted-foreground">
+                      {review.comment}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </div>

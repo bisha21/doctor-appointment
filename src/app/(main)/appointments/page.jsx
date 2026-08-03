@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPatientAppointments } from "actions/appointments";
 import { APPOINTMENT_STATUS_STYLES } from "@/lib/constants";
+import { ReviewForm } from "./_components/review-form";
 
 export const metadata = {
   title: "My Appointments - MediMeet",
@@ -66,12 +67,20 @@ export default async function AppointmentsPage() {
                     </p>
                   )}
                 </div>
-                <Badge
-                  variant="outline"
-                  className={APPOINTMENT_STATUS_STYLES[appointment.status]}
-                >
-                  {appointment.status}
-                </Badge>
+                <div className="flex flex-col items-start sm:items-end gap-2">
+                  <Badge
+                    variant="outline"
+                    className={APPOINTMENT_STATUS_STYLES[appointment.status]}
+                  >
+                    {appointment.status}
+                  </Badge>
+                  {appointment.status === "COMPLETED" && (
+                    <ReviewForm
+                      appointmentId={appointment.id}
+                      existingReview={appointment.review}
+                    />
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}

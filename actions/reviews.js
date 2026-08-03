@@ -3,11 +3,12 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { verifyAdmin } from "actions/admin";
 
 export async function getDoctorReviews(doctorId) {
     try {
         const reviews = await db.review.findMany({
-            where: { doctorId },
+            where: { doctorId, isHidden: false },
             include: {
                 patient: {
                     select: { name: true, imageUrl: true },
@@ -76,5 +77,68 @@ export async function submitReview(formData) {
     } catch (error) {
         console.error("Failed to submit review:", error);
         throw new Error(error.message || "Failed to submit review");
+    }
+}
+
+export async function getAllReviewsForAdmin() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+
+    try {
+        const reviews = await db.review.findMany({
+            include: {
+                patient: { select: { name: true } },
+                doctor: { select: { name: true } },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        return reviews;
+    } catch (e) {
+        console.log("Failed to get reviews");
+        throw new Error("Failed to get reviews");
+    }
+}
+
+export async function setReviewHidden(formData) {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+
+    const reviewId = formData.get("reviewId");
+    const hide = formData.get("hide") === "true";
+
+    if (!reviewId) throw new Error("Review id is required");
+
+    try {
+        await db.review.update({
+            where: { id: reviewId },
+            data: { isHidden: hide },
+        });
+
+        revalidatePath("/admin");
+        revalidatePath("/doctors");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update review visibility:", error);
+        throw new Error("Failed to update review visibility");
+    }
+}
+
+export async function deleteReview(formData) {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+
+    const reviewId = formData.get("reviewId");
+    if (!reviewId) throw new Error("Review id is required");
+
+    try {
+        await db.review.delete({ where: { id: reviewId } });
+
+        revalidatePath("/admin");
+        revalidatePath("/doctors");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete review:", error);
+        throw new Error("Failed to delete review");
     }
 }
