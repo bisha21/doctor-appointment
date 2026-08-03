@@ -12,7 +12,7 @@ export async function getDoctorsBySpecialty(specialty) {
             },
             orderBy: { name: "asc" },
             include: {
-                doctorReviews: { select: { rating: true } },
+                doctorReviews: { where: { isHidden: false }, select: { rating: true } },
             },
         });
 

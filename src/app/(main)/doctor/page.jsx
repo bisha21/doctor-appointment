@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { Calendar, Clock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getCurrentUser } from "actions/onboarding";
-import { getDoctorAppointments, getDoctorAvailability } from "actions/doctor";
+import { getDoctorAppointments } from "actions/doctor";
+import { getDoctorAvailability } from "actions/availability";
 import { AppointmentsList } from "./_components/appointments-list";
 import { AvailabilityManager } from "./_components/availability-manager";
 

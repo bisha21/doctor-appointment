@@ -4,7 +4,7 @@ import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { format } from "date-fns";
-import { APPOINTMENT_CREDIT_COST } from "@/lib/constants";
+import { APPOINTMENT_CREDIT_COST, CANCELLATION_REFUND_WINDOW_HOURS } from "@/lib/constants";
 
 export async function getDoctorById(doctorId) {
     try {
