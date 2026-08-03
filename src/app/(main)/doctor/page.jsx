@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Wallet } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getCurrentUser } from "actions/onboarding";
 import { getDoctorAppointments } from "actions/doctor";
 import { getDoctorAvailability } from "actions/availability";
+import { getDoctorPayouts } from "actions/payouts";
 import { AppointmentsList } from "./_components/appointments-list";
 import { AvailabilityManager } from "./_components/availability-manager";
+import { PayoutsPanel } from "./_components/payouts-panel";
 
 export const metadata = {
   title: "Doctor Dashboard - MediMeet",
@@ -18,8 +20,15 @@ export default async function DoctorDashboardPage() {
     redirect("/doctor/verification");
   }
 
-  const [{ appointments, error: appointmentsError }, { days, error: availabilityError }] =
-    await Promise.all([getDoctorAppointments(), getDoctorAvailability()]);
+  const [
+    { appointments, error: appointmentsError },
+    { days, error: availabilityError },
+    { payouts, earnedCredits, error: payoutsError },
+  ] = await Promise.all([
+    getDoctorAppointments(),
+    getDoctorAvailability(),
+    getDoctorPayouts(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -34,6 +43,10 @@ export default async function DoctorDashboardPage() {
           <TabsTrigger value="availability" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Availability
+          </TabsTrigger>
+          <TabsTrigger value="payouts" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Payouts
           </TabsTrigger>
         </TabsList>
 
@@ -50,6 +63,14 @@ export default async function DoctorDashboardPage() {
             <p className="text-destructive">{availabilityError}</p>
           ) : (
             <AvailabilityManager days={days} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="payouts" className="mt-4">
+          {payoutsError ? (
+            <p className="text-destructive">{payoutsError}</p>
+          ) : (
+            <PayoutsPanel earnedCredits={earnedCredits} payouts={payouts} />
           )}
         </TabsContent>
       </Tabs>

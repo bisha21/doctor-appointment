@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireVerifiedDoctor } from "@/lib/serverAuth";
+import { APPOINTMENT_CREDIT_COST } from "@/lib/constants";
 
 export async function getDoctorAppointments() {
     const doctor = await requireVerifiedDoctor();
@@ -64,9 +65,24 @@ export async function markAppointmentCompleted(formData) {
             throw new Error("Only scheduled appointments can be marked completed");
         }
 
-        await db.appointment.update({
-            where: { id: appointmentId },
-            data: { status: "COMPLETED" },
+        await db.$transaction(async (tx) => {
+            await tx.appointment.update({
+                where: { id: appointmentId },
+                data: { status: "COMPLETED" },
+            });
+
+            await tx.creditTransaction.create({
+                data: {
+                    userId: doctor.id,
+                    amount: APPOINTMENT_CREDIT_COST,
+                    type: "APPOINTMENT_EARNING",
+                },
+            });
+
+            await tx.user.update({
+                where: { id: doctor.id },
+                data: { earnedCredits: { increment: APPOINTMENT_CREDIT_COST } },
+            });
         });
 
         revalidatePath("/doctor");

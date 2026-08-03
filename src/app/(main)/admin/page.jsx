@@ -1,4 +1,4 @@
-import { Calendar, Clock, LayoutDashboard, ShieldCheck, ShieldOff, Star, XCircle } from "lucide-react";
+import { Calendar, Clock, LayoutDashboard, ShieldCheck, ShieldOff, Star, Wallet, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getPendingDoctors,
@@ -9,11 +9,13 @@ import {
   getPlatformSummary,
 } from "actions/admin";
 import { getAllReviewsForAdmin } from "actions/reviews";
+import { getPendingPayouts, getProcessedPayouts } from "actions/payouts";
 import { DoctorReviewList } from "./_components/doctor-review-list";
 import { DoctorActiveStatusList } from "./_components/verified-doctors";
 import { ReviewModerationList } from "./_components/review-moderation-list";
 import { AllAppointmentsList } from "./_components/all-appointments-list";
 import { PlatformSummary } from "./_components/platform-summary";
+import { PayoutQueue } from "./_components/payout-queue";
 
 export const metadata = {
   title: "Admin Dashboard - MediMeet",
@@ -28,6 +30,8 @@ export default async function AdminDashboardPage() {
     reviews,
     appointments,
     summary,
+    pendingPayouts,
+    processedPayouts,
   ] = await Promise.all([
     getPendingDoctors(),
     getVerifiedDoctors(),
@@ -36,6 +40,8 @@ export default async function AdminDashboardPage() {
     getAllReviewsForAdmin(),
     getAllAppointmentsForAdmin(),
     getPlatformSummary(),
+    getPendingPayouts(),
+    getProcessedPayouts(),
   ]);
 
   return (
@@ -71,6 +77,10 @@ export default async function AdminDashboardPage() {
           <TabsTrigger value="appointments" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Appointments ({appointments.length})
+          </TabsTrigger>
+          <TabsTrigger value="payouts" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Payouts ({pendingPayouts.length})
           </TabsTrigger>
         </TabsList>
 
@@ -116,6 +126,13 @@ export default async function AdminDashboardPage() {
 
         <TabsContent value="appointments" className="mt-4">
           <AllAppointmentsList appointments={appointments} />
+        </TabsContent>
+
+        <TabsContent value="payouts" className="mt-4">
+          <PayoutQueue
+            pendingPayouts={pendingPayouts}
+            processedPayouts={processedPayouts}
+          />
         </TabsContent>
       </Tabs>
     </div>
