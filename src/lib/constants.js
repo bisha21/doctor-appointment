@@ -1,0 +1,1 @@
+export const APPOINTMENT_CREDIT_COST = 2;

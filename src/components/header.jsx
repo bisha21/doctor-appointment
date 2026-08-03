@@ -13,6 +13,7 @@ import { checkUser } from '@/lib/checkUser';
 import { Badge } from './ui/badge';
 import Image from 'next/image';
 import { checkAndAllocateCredits } from 'actions/credits';
+import { ModeToggle } from './mode-toggle';
 
 export  async function Header() {
   const user = await checkUser();
@@ -125,6 +126,8 @@ export  async function Header() {
               </Badge>
             </Link>
           )}
+
+          <ModeToggle />
 
           <SignedOut>
             <SignInButton>
