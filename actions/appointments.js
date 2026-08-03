@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { format } from "date-fns";
 import { APPOINTMENT_CREDIT_COST, CANCELLATION_REFUND_WINDOW_HOURS } from "@/lib/constants";
+import { createNotification } from "@/lib/notifyHelpers";
 
 export async function getDoctorById(doctorId) {
     try {
@@ -153,6 +154,22 @@ export async function bookAppointment(formData) {
                 data: { credits: { decrement: APPOINTMENT_CREDIT_COST } },
             });
 
+            const when = format(slot.startTime, "MMM d 'at' h:mm a");
+
+            await createNotification(tx, {
+                userId: patient.id,
+                type: "BOOKING_CONFIRMED",
+                appointmentId: newAppointment.id,
+                message: `Your appointment with Dr. ${doctor.name} on ${when} is confirmed`,
+            });
+
+            await createNotification(tx, {
+                userId: doctor.id,
+                type: "BOOKING_CONFIRMED",
+                appointmentId: newAppointment.id,
+                message: `New appointment booked by ${patient.name} on ${when}`,
+            });
+
             return newAppointment;
         });
 
@@ -256,6 +273,24 @@ export async function cancelAppointment(formData) {
                     data: { credits: { increment: APPOINTMENT_CREDIT_COST } },
                 });
             }
+
+            const when = format(appointment.startTime, "MMM d 'at' h:mm a");
+
+            await createNotification(tx, {
+                userId: patient.id,
+                type: "APPOINTMENT_CANCELLED",
+                appointmentId: appointment.id,
+                message: isRefundEligible
+                    ? `Your appointment on ${when} was cancelled and your credits were refunded`
+                    : `Your appointment on ${when} was cancelled (outside the refund window)`,
+            });
+
+            await createNotification(tx, {
+                userId: appointment.doctorId,
+                type: "APPOINTMENT_CANCELLED",
+                appointmentId: appointment.id,
+                message: `${patient.name} cancelled their appointment on ${when}`,
+            });
         });
 
         revalidatePath("/appointments");

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireVerifiedDoctor } from "@/lib/serverAuth";
 import { verifyAdmin } from "actions/admin";
 import { PLATFORM_FEE_PER_CREDIT, DOCTOR_NET_PER_CREDIT } from "@/lib/constants";
+import { createNotification } from "@/lib/notifyHelpers";
 
 export async function getDoctorPayouts() {
     const doctor = await requireVerifiedDoctor();
@@ -130,18 +131,27 @@ export async function processPayout(formData) {
         const { userId: adminClerkId } = await auth();
         const admin = await db.user.findUnique({ where: { clerkUserId: adminClerkId } });
 
-        const updated = await db.payout.updateMany({
+        const payout = await db.payout.findFirst({
             where: { id: payoutId, status: "PROCESSING" },
-            data: {
-                status: "PROCESSED",
-                processedAt: new Date(),
-                processedBy: admin?.name || admin?.email || "admin",
-            },
         });
+        if (!payout) throw new Error("Payout not found or already processed");
 
-        if (updated.count === 0) {
-            throw new Error("Payout not found or already processed");
-        }
+        await db.$transaction(async (tx) => {
+            await tx.payout.update({
+                where: { id: payoutId },
+                data: {
+                    status: "PROCESSED",
+                    processedAt: new Date(),
+                    processedBy: admin?.name || admin?.email || "admin",
+                },
+            });
+
+            await createNotification(tx, {
+                userId: payout.doctorId,
+                type: "PAYOUT_PROCESSED",
+                message: `Your payout of $${payout.netAmount.toFixed(2)} (${payout.credits} credits) has been processed`,
+            });
+        });
 
         revalidatePath("/admin");
         revalidatePath("/doctor");

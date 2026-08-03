@@ -39,6 +39,7 @@ model User {
   payouts             Payout[]
   patientReviews      Review[] @relation("PatientReviews")
   doctorReviews       Review[] @relation("DoctorReviews")
+  notifications       Notification[]
 }
 
 enum UserRole {
@@ -161,4 +162,24 @@ model Payout {
 enum PayoutStatus {
   PROCESSING
   PROCESSED
+}
+
+model Notification {
+  id            String           @id @default(uuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          NotificationType
+  message       String
+  appointmentId String?          // Optional link back to the related appointment
+  isRead        Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_REMINDER
+  PAYOUT_PROCESSED
 }
