@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
@@ -35,13 +37,43 @@ export async function getVerifiedDoctors() {
     if (!isAdmin) throw new Error("Unauthorized");
     try {
         const verifiedDoctors = await db.user.findMany({
-            where: { role: "DOCTOR", verificationStatus: "PENDING" },
+            where: { role: "DOCTOR", verificationStatus: "VERIFIED" },
             orderBy: { createdAt: "desc" },
         });
         return verifiedDoctors;
     } catch (e) {
-        console.log("Failed to get pending doctors");
-        throw new Error("Failed to get pending doctors");
+        console.log("Failed to get verified doctors");
+        throw new Error("Failed to get verified doctors");
+    }
+}
+
+export async function getRejectedDoctors() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+    try {
+        const rejectedDoctors = await db.user.findMany({
+            where: { role: "DOCTOR", verificationStatus: "REJECTED" },
+            orderBy: { createdAt: "desc" },
+        });
+        return rejectedDoctors;
+    } catch (e) {
+        console.log("Failed to get rejected doctors");
+        throw new Error("Failed to get rejected doctors");
+    }
+}
+
+export async function getSuspendedDoctors() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) throw new Error("Unauthorized");
+    try {
+        const suspendedDoctors = await db.user.findMany({
+            where: { role: "DOCTOR", verificationStatus: "SUSPENDED" },
+            orderBy: { createdAt: "desc" },
+        });
+        return suspendedDoctors;
+    } catch (e) {
+        console.log("Failed to get suspended doctors");
+        throw new Error("Failed to get suspended doctors");
     }
 }
 
@@ -82,7 +114,7 @@ export async function updateDoctorActiveStatus(formData) {
     }
 
     try {
-        const status = suspend ? "PENDING" : "VERIFIED";
+        const status = suspend ? "SUSPENDED" : "VERIFIED";
 
         await db.user.update({
             where: {

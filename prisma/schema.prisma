@@ -49,6 +49,7 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+  SUSPENDED
 }
 
 model Availability {
