@@ -29,6 +29,7 @@ model User {
   credentialUrl     String?   // Document URL
   description       String?   @db.Text
   verificationStatus VerificationStatus?  @default(PENDING)
+  earnedCredits     Int       @default(0) // Credits earned from completed appointments, awaiting payout
   
   // Relations
   patientAppointments Appointment[] @relation("PatientAppointments")
@@ -133,6 +134,8 @@ enum TransactionType {
   CREDIT_PURCHASE     // Credits purchased through Clerk Billing
   APPOINTMENT_DEDUCTION // Credit used for appointment
   APPOINTMENT_REFUND    // Credit refunded from a cancelled appointment
+  APPOINTMENT_EARNING   // Doctor earns credits when an appointment is completed
+  PAYOUT_REQUEST        // Doctor's earned credits are debited when a payout is requested
   ADMIN_ADJUSTMENT      // Manual adjustment by admin
 }
 
